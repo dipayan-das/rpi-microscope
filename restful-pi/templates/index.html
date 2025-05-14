@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="auto">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FlaskApp</title>
+    <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/bootstrap.min.css') }}">
+</head>
+<body>
+    <div class="container py-4">
+        <div class="p-5 mb-4 bg-body-tertiary rounded-3">
+            <div class="container-fluid py-5">
+              <h1 class="display-5 fw-bold">
+                Hello World!
+                </h1>
+                <h2>Welcome to FlaskApp!</h2>
+                <h3>{{ utc_dt }}</h3>
+                <h1 id="x_y"></h1>
+                <img src="{{ url_for('video_feed') }}" id="mover">
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static',filename='bootstrap.bundle.min.js') }}"> </script>
+    <script src="{{ url_for('static',filename='color-modes.js') }}"> </script>
+</body>
+    <script type="text/javascript">
+        function printMousePos(event) {
+            document.getElementById("x_y").textContent =
+            "clientX: " + event.clientX +
+            " - clientY: " + event.clientY;
+        }
+
+        const mover = document.getElementById("mover");
+
+        mover.addEventListener('click', (event) => {
+            const data = {
+                x: event.clientX,
+                y: event.clientY
+            };
+            printMousePos(event);
+            fetch('/mouse-event', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => console.log(data));
+        });
+    </script>
+</html>
