@@ -1,24 +1,27 @@
 import io
-import picamera
+from picamera2 import Picamera2
 import datetime
 from flask import Flask, Response, render_template, request
 import stepper
+import cv2
 
 app = Flask(__name__)
 
+camera = Picamera2()
+camera.configure(camera.create_preview_configuration(main={"format": 'XRGB8888', "size": (640, 480)}))
+camera.start()
+
 def generate_frames():
-    with picamera.PiCamera() as camera:
-        camera.resolution = (640, 480)
-        camera.framerate = 24
-        stream = io.BytesIO()
-
-        for _ in camera.capture_continuous(stream, 'jpeg', use_video_port=True):
-            stream.seek(0)
-            yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + stream.read() + b'\r\n'
-            stream.seek(0)
-            stream.truncate()
-
+    while True:
+        frame = camera.capture_array()
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        
 @app.route('/mouse-event', methods=['POST'])
+
+
 def handle_mouse_event():
     data = request.get_json()
 
@@ -29,12 +32,11 @@ def handle_mouse_event():
 
     # Do something with the mouse event data
     print(f"Mouse event at ({x}, {y}), button: {button}")
-    stepper.movement()
+    stepper.movement('base')
+    stepper.movement('top')
     # Return a JSON response
     return ({'message': [x, y]})
 
-def z():
-    print("hello world")
 
 @app.route('/video_feed')
 def video_feed():
